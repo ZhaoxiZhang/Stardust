@@ -2,6 +2,7 @@ package org.swsd.stardust.view.activity;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -15,9 +16,12 @@ import com.zhuge.analysis.stat.ZhugeSDK;
 import org.swsd.stardust.R;
 import org.swsd.stardust.base.BaseActivity;
 import org.swsd.stardust.presenter.LoginPresenter;
+import org.swsd.stardust.presenter.UserPresenter;
+import org.swsd.stardust.util.LoginActivityJudgment;
+import org.swsd.stardust.view.guideActivity.GuideActivity;
 
 /**
- * author     :  胡俊钦
+ * author     :  胡俊钦，林炜鸿
  * time       :  2017/11/07
  * description:  登录模块
  * version:   :  1.0
@@ -26,6 +30,7 @@ public class LoginActivity extends BaseActivity {
 
     @Override
     public int bindLayout() {
+
         // 加载布局
         setContentView(R.layout.activity_login);
         return 0;
@@ -44,6 +49,26 @@ public class LoginActivity extends BaseActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        SharedPreferences sharedPreferences = this.getSharedPreferences("Guide", Context.MODE_PRIVATE);
+        int firstUsed = sharedPreferences.getInt("isFirst", -1);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        if(firstUsed == -1){
+            editor.putInt("isFirst", 1);
+            editor.commit();
+            Intent goToGuide = new Intent(getApplicationContext(), GuideActivity.class);
+            getApplicationContext().startActivity(goToGuide);
+            finish();
+        }
+
+        //判断是否需要登录
+        if(!LoginActivityJudgment.loginActivityJudgment()){
+            Intent goToMain = new Intent(getApplicationContext(), MainActivity.class);
+            goToMain.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getApplicationContext().startActivity(goToMain);
+            finish();
+        }
+
         super.onCreate(savedInstanceState);
         //初始化分析跟踪
         ZhugeSDK.getInstance().init(getApplicationContext());

@@ -13,9 +13,13 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 
+import org.litepal.crud.DataSupport;
 import org.swsd.stardust.R;
+import org.swsd.stardust.model.bean.ArticleCollectedBean;
 import org.swsd.stardust.model.bean.UserBean;
 import org.swsd.stardust.presenter.UserPresenter;
+import org.swsd.stardust.view.activity.ArticleCollectionActivity;
+import org.swsd.stardust.view.activity.MailActivity;
 
 import java.util.Date;
 
@@ -63,6 +67,29 @@ public class UserFragment extends Fragment {
         // 显示用户信息
         showUserInfo(view);
 
+        // 设置文章收藏监听
+        TextView tvCollection = view.findViewById(R.id.tv_my_collection);
+        tvCollection.setText("已收藏" + DataSupport.count(ArticleCollectedBean.class) + "篇文章");
+        tvCollection.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                // 点击按钮后跳转到显示站内信页面
+                Intent goToCollection = new Intent(UserFragment.super.getContext(), ArticleCollectionActivity.class);
+                startActivity(goToCollection);
+            }
+        });
+
+        // 设置站内信监听
+        TextView tvMail = view.findViewById(R.id.tv_my_mail);
+        tvMail.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                // 点击按钮后跳转到显示站内信页面
+                Intent goToMail = new Intent(UserFragment.super.getContext(), MailActivity.class);
+                startActivity(goToMail);
+            }
+        });
+
         // 设置用户反馈监听
         TextView tvFeedBack = view.findViewById(R.id.tv_my_feedback);
         tvFeedBack.setOnClickListener(new View.OnClickListener() {
@@ -85,13 +112,19 @@ public class UserFragment extends Fragment {
 
         // 显示用户头像
         CircleImageView civMyPhoto = view.findViewById(R.id.ic_my_user);
-        if (userBean.getAvatarPath().equals("")) {
-            // 如果头像路径为空，则使用默认头像
-            Glide.with(this).load(R.drawable.ic_user)
-                    .into(civMyPhoto);
-        } else {
+        if(userBean.getAvatarPath()==null){
+            // 防止token过期获取不到头像而导致程序崩溃
             Glide.with(this).load(userBean.getAvatarPath())
                     .into(civMyPhoto);
+        }else{
+            if (userBean.getAvatarPath().equals("")) {
+                // 如果头像路径为空，则使用默认头像
+                Glide.with(this).load(R.drawable.ic_user)
+                        .into(civMyPhoto);
+            } else {
+                Glide.with(this).load(userBean.getAvatarPath())
+                        .into(civMyPhoto);
+            }
         }
 
         // 显示用户名

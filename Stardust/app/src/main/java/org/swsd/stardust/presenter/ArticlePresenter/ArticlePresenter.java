@@ -15,6 +15,7 @@ import org.litepal.crud.DataSupport;
 import org.swsd.stardust.model.bean.ArticleBean;
 import org.swsd.stardust.model.bean.UserBean;
 import org.swsd.stardust.presenter.UserPresenter;
+import org.swsd.stardust.util.UpdateTokenUtil;
 import org.swsd.stardust.view.fragment.ArticleFragment;
 
 import java.io.IOException;
@@ -33,6 +34,14 @@ import okhttp3.Response;
  * version: 2.0
  */
 public class ArticlePresenter implements IArticlePresenter{
+    @Override
+    public void refreshToken() {
+        // 更新token
+        UserBean userBean;
+        UserPresenter userPresenter = new UserPresenter();
+        userBean = userPresenter.toGetUserInfo();
+        UpdateTokenUtil.updateUserToken(userBean);
+    }
 
     private static final String TAG = "熊立强 ArticlePresenter";
     private static String ARTICLE_ID;
@@ -45,12 +54,14 @@ public class ArticlePresenter implements IArticlePresenter{
 
     @Override
     public void getArticle(final UserBean userBean, final Activity mActivity) {
+        refreshToken();
         //向服务器发送请求，并且存入数据库
         new Thread(new Runnable() {
             @Override
             public void run() {
                 //清空之前的数据库
                 DataSupport.deleteAll(ArticleBean.class);
+                Log.d(TAG, "文章数据库清空完成");
                 Log.d(TAG, "userBean" + userBean.getToken());
                 Log.d(TAG, "userBean" + userBean.getUserId());
                 OkHttpClient client = new OkHttpClient();
@@ -119,6 +130,7 @@ public class ArticlePresenter implements IArticlePresenter{
     private void parseArticle(final String url){
         try {
             Document doc = Jsoup.connect(url).get();
+            Log.d("熊立强", "parseArticle:  connect success");
             Elements elements = doc.select("h2[class=rich_media_title]");
             ArticleBean temp = new ArticleBean();
             temp.setArticleId(ARTICLE_ID);
@@ -142,6 +154,15 @@ public class ArticlePresenter implements IArticlePresenter{
             temp.setArticleUrl(url);
             Log.d(TAG, "getArticle is " + temp.getArticleUrl());
             Log.d(TAG, "getArticle is " + temp.getTitle());
+
+            // 获取文章封面
+            Element element = doc.getElementById("js_article");
+            String coverUrl = "";
+            Elements imgs = element.select("img[src]");
+            Element e = imgs.get(3);
+            coverUrl = e.attr("src");
+            Log.d(TAG, "imgSRC" + coverUrl);
+            temp.setArticleCover(coverUrl);
             //解析完成，保存数据库
             temp.save();
             ArticleFragment.mArticleList.add(temp);
@@ -203,6 +224,13 @@ public class ArticlePresenter implements IArticlePresenter{
             temp.setArticleUrl(url);
             temp.setAuthor(putArticle.getAuthor());
             temp.setCreateTime(putArticle.getPublish_time());
+
+            // 获取文章封面
+            String coverUrl = "";
+            Elements imgs = doc.select("img[src]");
+            Element e = imgs.get(2);
+            coverUrl = e.attr("src");
+            Log.d(TAG, "imgSRC" + coverUrl);
             temp.save();
             ArticleFragment.mArticleList.add(temp);
             Log.d(TAG, "putArticle: 上传文章完成");
