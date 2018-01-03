@@ -1,14 +1,15 @@
 package org.swsd.stardust.view.activity;
 
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.res.Resources;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -45,7 +46,6 @@ public class MeteorDetail extends BaseActivity{
     TextView informTextView;
     MeteorBean meteor;
     String responseData;
-    Dialog mDialog;
     AlertDialog.Builder dialog;
     LikeButton likeButton;
     Boolean isLikeMeteor;
@@ -72,7 +72,7 @@ public class MeteorDetail extends BaseActivity{
         meteorDetail = (WebView) findViewById(R.id.wv_MeteorDetail_Message);
 
         //遮罩处理
-        mDialog = LoadingUtil.createLoadingDialog(this,"加载中...");
+        LoadingUtil.createLoadingDialog(this,"加载中...");
 
         //url解析
         Bundle bundle = new Bundle();
@@ -136,27 +136,19 @@ public class MeteorDetail extends BaseActivity{
             @Override
             public void unLiked() {
 
-                if(isLike){
-                    likeButton.setLiked(true);
-                    isLikeMeteor = true;
+                showField = String.valueOf(meteor.getUpvoteQuantity()+1);
+                floatingText = new FloatingText.FloatingTextBuilder(MeteorDetail.this)
+                        .textColor(Color.argb ( 255,  238,  180,  34 )) // 漂浮字体的颜色
+                        .textSize(40)   // 浮字体的大小
+                        .offsetX(0) // FloatingText 相对其所贴附View的水平位移偏移量
+                        .offsetY(100) // FloatingText 相对其所贴附View的垂直位移偏移量
+                        .floatingAnimatorEffect(new ScaleFloatingAnimator()) // 漂浮动画
+                        .build();
 
-                    showField = String.valueOf(meteor.getUpvoteQuantity()+1);
-                    floatingText = new FloatingText.FloatingTextBuilder(MeteorDetail.this)
-                            .textColor(Color.argb ( 255,  238,  180,  34 )) // 漂浮字体的颜色
-                            .textSize(40)   // 浮字体的大小
-                            .textContent("+" + showField) // 浮字体的内容
-                            .offsetX(0) // FloatingText 相对其所贴附View的水平位移偏移量
-                            .offsetY(100) // FloatingText 相对其所贴附View的垂直位移偏移量
-                            .floatingAnimatorEffect(new ScaleFloatingAnimator()) // 漂浮动画
-                            .build();
+                floatingText.attach2Window();
+                floatingText.startFloating(likeButton);
 
-                    floatingText.attach2Window();
-                    floatingText.startFloating(likeButton);
-
-                }else{
-                    isLikeMeteor = false;
-                }
-
+                isLikeMeteor = false;
             }
         });
 
@@ -178,6 +170,12 @@ public class MeteorDetail extends BaseActivity{
                     setLikeMeteorPresenter.updataMeteor(meteor);
                     MeteorBean meteorBean = new MeteorBean();
                     meteorBean.setIsLike(true);
+                    meteorBean.updateAll("meteorId = ?", String.valueOf(meteor.getMeteorId()));
+                }else if(!isLikeMeteor && isLike){
+                    SetLikeMeteorPresenter setLikeMeteorPresenter = new SetLikeMeteorPresenter();
+                    setLikeMeteorPresenter.cancelMeteor(meteor);
+                    MeteorBean meteorBean = new MeteorBean();
+                    meteorBean.setIsLike(false);
                     meteorBean.updateAll("meteorId = ?", String.valueOf(meteor.getMeteorId()));
                 }
                 finish();
@@ -215,7 +213,7 @@ public class MeteorDetail extends BaseActivity{
                 meteorDetail.getSettings().setLayoutAlgorithm(WebSettings.LayoutAlgorithm.SINGLE_COLUMN);
 
                 //加载遮罩消除
-                LoadingUtil.closeDialog(mDialog);
+                LoadingUtil.closeDialog();
             }
         });
     }
@@ -227,8 +225,12 @@ public class MeteorDetail extends BaseActivity{
 
     @Override
     public void initView() {
-        // 沉浸式顶部栏，继承基类的方法
-        steepStatusBar();
+        // 沉浸式顶部栏
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            // 透明状态栏
+            getWindow().addFlags(
+                    WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        }
     }
 
     @Override
@@ -243,6 +245,12 @@ public class MeteorDetail extends BaseActivity{
             setLikeMeteorPresenter.updataMeteor(meteor);
             MeteorBean meteorBean = new MeteorBean();
             meteorBean.setIsLike(true);
+            meteorBean.updateAll("meteorId = ?", String.valueOf(meteor.getMeteorId()));
+        }else if(!isLikeMeteor && isLike){
+            SetLikeMeteorPresenter setLikeMeteorPresenter = new SetLikeMeteorPresenter();
+            setLikeMeteorPresenter.cancelMeteor(meteor);
+            MeteorBean meteorBean = new MeteorBean();
+            meteorBean.setIsLike(false);
             meteorBean.updateAll("meteorId = ?", String.valueOf(meteor.getMeteorId()));
         }
         super.onBackPressed();

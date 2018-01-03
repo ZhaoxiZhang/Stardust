@@ -15,6 +15,7 @@ import org.litepal.crud.DataSupport;
 import org.swsd.stardust.model.bean.ArticleBean;
 import org.swsd.stardust.model.bean.UserBean;
 import org.swsd.stardust.presenter.UserPresenter;
+import org.swsd.stardust.util.LoadingUtil;
 import org.swsd.stardust.util.UpdateTokenUtil;
 import org.swsd.stardust.view.fragment.ArticleFragment;
 
@@ -34,6 +35,7 @@ import okhttp3.Response;
  * version: 2.0
  */
 public class ArticlePresenter implements IArticlePresenter{
+    private static int ThreadId = 0;
     @Override
     public void refreshToken() {
         // 更新token
@@ -56,9 +58,17 @@ public class ArticlePresenter implements IArticlePresenter{
     public void getArticle(final UserBean userBean, final Activity mActivity) {
         refreshToken();
         //向服务器发送请求，并且存入数据库
-        new Thread(new Runnable() {
+        Thread thread = new Thread(new Runnable() {
             @Override
-            public void run() {
+            public synchronized void run() {
+                //回主线程更新UI
+                mActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        LoadingUtil.createLoadingDialog(mActivity,"加载中");
+                    }
+                });
+
                 //清空之前的数据库
                 DataSupport.deleteAll(ArticleBean.class);
                 Log.d(TAG, "文章数据库清空完成");
@@ -66,7 +76,7 @@ public class ArticlePresenter implements IArticlePresenter{
                 Log.d(TAG, "userBean" + userBean.getUserId());
                 OkHttpClient client = new OkHttpClient();
                 Request request = new Request.Builder()
-                        .url("http://119.29.179.150:81/api/users/" + userBean.getUserId() + "/articles?all_random=1")
+                        .url("http://119.29.179.150:81/api/users/" + userBean.getUserId() + "/articles?all_random=0")
                         .addHeader("Authorization", userBean.getToken())
                         .build();
                 try {
@@ -83,9 +93,9 @@ public class ArticlePresenter implements IArticlePresenter{
                             String id = article.getString("id");
                             String url = article.getString("url");
                             String status = article.getString("need_dedication");
-                            Log.d(TAG, "run: id is " + id);
-                            Log.d(TAG, "run: url is " + url);
-                            Log.d(TAG, "run: status is " + status);
+                            Log.d(TAG, Thread.currentThread().getName()+"run: id is " + id);
+                            Log.d(TAG, Thread.currentThread().getName()+"run: url is " + url);
+                            Log.d(TAG, Thread.currentThread().getName()+"run: status is " + status);
                             ARTICLE_ID = id;
                             if (status == "true") {
                                 // 需要发送的文章
@@ -107,6 +117,14 @@ public class ArticlePresenter implements IArticlePresenter{
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+                finally {
+                    mActivity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            LoadingUtil.closeDialog();
+                        }
+                    });
+                }
             }
 /*                    //更新数据库信息
 
@@ -120,7 +138,10 @@ public class ArticlePresenter implements IArticlePresenter{
                             MeteorFragment.meteorAdapter.notifyDataSetChanged();
                         }
                     });*/
-        }).start();
+        });
+        thread.setName("线程" + ThreadId);
+        ThreadId++;
+        thread.start();
     }
 
     /**
@@ -227,8 +248,8 @@ public class ArticlePresenter implements IArticlePresenter{
 
             // 获取文章封面
             String coverUrl = "";
-            Elements imgs = doc.select("img[src]");
-            Element e = imgs.get(2);
+            Elements imgs = doc.getElementById("js_content").select("img[src]");
+            Element e = imgs.get(1);
             coverUrl = e.attr("src");
             Log.d(TAG, "imgSRC" + coverUrl);
             temp.save();

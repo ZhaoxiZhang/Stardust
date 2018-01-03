@@ -28,6 +28,7 @@ import org.swsd.stardust.view.fragment.UserFragment;
  */
 public class MainActivity extends BaseActivity {
 
+
     private static int FRAGMENT_HOLDER = 0;
     BottomNavigationView navigation;
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
@@ -42,8 +43,10 @@ public class MainActivity extends BaseActivity {
                     //navigation.getBackground().setAlpha(0);
                     return true;
                 case R.id.navigation_article:
+                    if (FRAGMENT_HOLDER != 1){
+                        replaceFragment(new ArticleFragment());
+                    }
                     FRAGMENT_HOLDER = 1;
-                    replaceFragment(new ArticleFragment());
                     //navigation.getBackground().setAlpha(0);
                     return true;
                 case R.id.navigation_addtion:
@@ -136,5 +139,6 @@ public class MainActivity extends BaseActivity {
     protected void onDestroy() {
         super.onDestroy();
         ZhugeSDK.getInstance().flush(getApplicationContext());
+
     }
 }

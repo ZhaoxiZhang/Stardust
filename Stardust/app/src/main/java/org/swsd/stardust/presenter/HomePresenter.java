@@ -3,6 +3,7 @@ package org.swsd.stardust.presenter;
 import android.app.Activity;
 import android.app.DatePickerDialog;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Message;
@@ -145,6 +146,13 @@ public class HomePresenter implements IHomePresenter{
         return res;
     }
 
+
+    /**
+     *    author     :  张昭锡
+     *    time       :  2017/12/24
+     *    description:  同步用户所选日期的记录
+     *    version:   :  1.0
+     */
     @Override
     public void syncNotesOfDay(final int year, final int month, final int day, final List<NoteBean>noteList, final HomeAdapter adapter, final Activity activity){
 

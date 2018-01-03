@@ -1,6 +1,8 @@
 package org.swsd.stardust.view.fragment;
 
 
+import android.app.ActivityManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -14,26 +16,16 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
-import org.litepal.crud.DataSupport;
 import org.swsd.stardust.R;
 import org.swsd.stardust.model.bean.NoteBean;
-import org.swsd.stardust.model.bean.UserBean;
 import org.swsd.stardust.presenter.HomePresenter;
 import org.swsd.stardust.presenter.IHomePresenter;
 import org.swsd.stardust.presenter.adapter.HomeAdapter;
-import org.swsd.stardust.util.UpdateTokenUtil;
 
-import java.io.IOException;
-import java.net.ResponseCache;
 import java.util.Calendar;
 import java.util.List;
 
 import cn.carbswang.android.numberpickerview.library.NumberPickerView;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
-
-import static org.swsd.stardust.R.mipmap.user;
 
 /**
  *    author     :  张昭锡
@@ -114,7 +106,7 @@ public class HomeFragment extends Fragment implements IHomeView,View.OnClickList
 
         mRvLightspot.setLayoutManager(layoutManager);
 
-        mRvLightspot.setNestedScrollingEnabled(false);
+        //mRvLightspot.setNestedScrollingEnabled(false);
 
         //创建主页适配器
         adapter = new HomeAdapter(getContext(), mNoteList);
@@ -192,7 +184,13 @@ public class HomeFragment extends Fragment implements IHomeView,View.OnClickList
             }
         });
 
-        mHomePresenter.changeDate(getContext(),adapter,mNoteList,getActivity(),mPreYear,mPreMonth + 1,mPreDay);
+        if (pref.getBoolean("isFirst",true)){
+            mHomePresenter.changeDate(getContext(),adapter,mNoteList,getActivity(),mPreYear,mPreMonth + 1,mPreDay);
+            editor.putBoolean("isFirst",false);
+            editor.apply();
+        }
+
+        Log.d(TAG, "onCreateView: zxzhang hahahha");
 
         Log.d(TAG, "onCreateView: zxzhang hahahha");
 
@@ -325,6 +323,7 @@ public class HomeFragment extends Fragment implements IHomeView,View.OnClickList
     @Override
     public void onStart() {
         super.onStart();
+
         Log.d(TAG, "onStart: ");
     }
 
@@ -354,6 +353,10 @@ public class HomeFragment extends Fragment implements IHomeView,View.OnClickList
         editor.putInt("mPreMonth",mPreMonth);
         editor.putInt("mPreDay",mPreDay);
         editor.apply();
+        if (isBackground(getContext())){
+            editor.clear();
+            editor.apply();
+        }
     }
 
     @Override
@@ -362,6 +365,31 @@ public class HomeFragment extends Fragment implements IHomeView,View.OnClickList
         Log.d(TAG, "onDetach: ");
     }
 
+    /**
+     *    author     :  张昭锡
+     *    time       :  2017/11/13
+     *    description:  判断当前是否处于后台
+     *    version:   :  1.0
+     */
+    public boolean isBackground(Context context) {
+        
+        ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningAppProcessInfo> appProcesses = activityManager.getRunningAppProcesses();
+        for (ActivityManager.RunningAppProcessInfo appProcess : appProcesses) {
+            if (appProcess.processName.equals(context.getPackageName())) {
+                if (appProcess.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
+                    Log.d(TAG, "isBackground: No");
+                    return false;
+                }else{
+                    Log.d(TAG, "isBackground: Yes");
+                    return true;
+                }
+            }
+        }
+
+        Log.d(TAG, "isBackground: No");
+        return false;
+    }
 
 
 

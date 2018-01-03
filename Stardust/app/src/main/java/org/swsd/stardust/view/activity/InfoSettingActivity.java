@@ -59,7 +59,7 @@ public class InfoSettingActivity extends BaseActivity {
 
             //根据图片路径显示头像
             CircleImageView circleImageView = (CircleImageView) findViewById(R.id.civ_setting_photo);
-            if (userBean.getAvatarPath().equals("")) {
+            if (userBean.getAvatarPath() == null || userBean.getAvatarPath().equals("")) {
                 // 如果头像路径为空，则使用默认头像
                 Glide.with(InfoSettingActivity.this).load(R.drawable.ic_setting_photo)
                         .into(circleImageView);
@@ -105,7 +105,7 @@ public class InfoSettingActivity extends BaseActivity {
         CircleImageView circleImageView = (CircleImageView) findViewById(R.id.civ_setting_photo);
         if (userBean.getAvatarPath().equals("")) {
             // 如果头像路径为空，则使用默认头像
-            Glide.with(this).load(R.drawable.ic_setting_photo)
+            Glide.with(this).load(R.drawable.bg_home_skarry)
                     .into(circleImageView);
         } else {
             Glide.with(this).load(userBean.getAvatarPath())
